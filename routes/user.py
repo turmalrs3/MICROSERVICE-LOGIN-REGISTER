@@ -109,3 +109,4 @@ def login_user(form_data: OAuth2PasswordRequestForm = Depends()):
         print(str(e))
         raise HTTPException(status_code=500, detail="Erro interno no servidor.")
 
+
