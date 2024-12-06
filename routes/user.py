@@ -1,17 +1,18 @@
 from dotenv import load_dotenv
 import os
 from fastapi import APIRouter, HTTPException, Depends
-from fastapi.security import OAuth2AuthorizationCodeBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2AuthorizationCodeBearer, OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import text
 from config.db import conn
 from schemas.schema import UserCreate, MessageResponse, TokenData
 from cryptography.fernet import Fernet
-from config.auth import create_access_token
+from config.auth import create_access_token,  decode_access_token
 
 load_dotenv()
 key = os.getenv("FERRET_KEY").encode()
 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 user = APIRouter()
 
 # OPERACAO POST PARA CRIAR UM NOVO USUARIO
@@ -68,7 +69,6 @@ def create_user(user_data: UserCreate):
         raise HTTPException(status_code=500, detail="Erro ao criar usuário.")
     
 # OPERACAO POST PARA LOGIN
-
 @user.post("/login", response_model=TokenData)
 def login_user(form_data: OAuth2PasswordRequestForm = Depends()):
     try:
@@ -109,4 +109,29 @@ def login_user(form_data: OAuth2PasswordRequestForm = Depends()):
         print(str(e))
         raise HTTPException(status_code=500, detail="Erro interno no servidor.")
 
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    payload = decode_access_token(token)
+    if payload is None:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+     # Busca o usuário no banco de dados
+    user_query = text("SELECT * FROM UserBd WHERE Email = :email")
+    user = conn.execute(user_query, {"email": payload["sub"]}).fetchone()
+    if user is None:
+        raise HTTPException(status_code=401, detail="User not found")
+    
+    return dict(user._mapping)
 
+#OPERACAO GET PARA USUARIO LOGADO
+@user.get("/validate", tags=["Auth"])
+async def validate_token(token: str = Depends(oauth2_scheme)):
+    """
+    Endpoint para validar um token JWT e retornar os dados do usuário.
+    """
+    user = get_current_user(token)  # Chama a função de validação
+    return {
+        "id": user["UserBdID"],
+        "email": user["Email"],
+        "role": user["UserRoleID"],
+        "username": user["UserName"]
+    }
