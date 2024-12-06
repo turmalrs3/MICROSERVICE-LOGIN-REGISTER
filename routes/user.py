@@ -12,7 +12,7 @@ from config.auth import create_access_token,  decode_access_token
 load_dotenv()
 key = os.getenv("FERRET_KEY").encode()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="http://saudeplus-alb-1862619778.us-east-1.elb.amazonaws.com/service1/login")
 user = APIRouter()
 
 # OPERACAO POST PARA CRIAR UM NOVO USUARIO
