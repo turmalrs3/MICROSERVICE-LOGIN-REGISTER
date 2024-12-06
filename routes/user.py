@@ -135,3 +135,19 @@ async def validate_token(token: str = Depends(oauth2_scheme)):
         "role": user["UserRoleID"],
         "username": user["UserName"]
     }
+
+@user.get("/validate_manual", tags=["Auth"])
+def validate_token_manual(token: str):
+    """
+    Endpoint para validar um token JWT fornecido como query parameter.
+    """
+    try:
+        user = get_current_user(token)  # Chama a função de validação
+        return {
+            "id": user["UserBdID"],
+            "email": user["Email"],
+            "role": user["UserRoleID"],
+            "username": user["UserName"]
+        }
+    except HTTPException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
