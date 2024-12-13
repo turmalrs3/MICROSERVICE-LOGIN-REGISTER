@@ -90,17 +90,17 @@ def login_user(form_data: OAuth2PasswordRequestForm = Depends()):
             raise HTTPException(status_code=400, detail="Email ou senha incorretos.")
 
         # Criar o token JWT
-        access_token = create_access_token(data={
-            "sub": user_dict["Email"],
-            "username": user_dict["UserName"],  # Nome correto da chave
-            "role": user_dict["UserRoleID"]
-        })
+        #access_token = create_access_token(data={
+       #     "sub": user_dict["Email"],
+        #    "username": user_dict["UserName"],  # Nome correto da chave
+         #   "role": user_dict["UserRoleID"]
+        #})
 
         # Retornar os dados do token
         return {
-            "access_token": access_token,
-            "token_type": "bearer",
-            "email": user_dict["Email"],
+            #"access_token": access_token,
+            #"token_type": "bearer",
+            #"email": user_dict["Email"],
             "role": user_dict["UserRoleID"],
             "id": user_dict["UserBdID"]
         }

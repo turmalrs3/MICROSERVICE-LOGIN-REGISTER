@@ -34,8 +34,8 @@ class DoctorCreate(BaseModel):
         orm_mode = True
 
 class TokenData(BaseModel):
-    access_token: str
-    token_type: str
-    email: str
+    #access_token: str
+    #token_type: str
+    #email: str
     role: int
     id: int
