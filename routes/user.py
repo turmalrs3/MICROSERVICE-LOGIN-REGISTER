@@ -5,6 +5,7 @@ from fastapi.security import OAuth2AuthorizationCodeBearer, OAuth2PasswordReques
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import text
 from config.db import conn
+from pydantic import BaseModel
 from schemas.schema import UserCreate, MessageResponse, TokenData
 from cryptography.fernet import Fernet
 from config.auth import create_access_token,  decode_access_token
@@ -67,40 +68,33 @@ def create_user(user_data: UserCreate):
         conn.rollback()
         print(str(e))
         raise HTTPException(status_code=500, detail="Erro ao criar usuário.")
-    
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
 # OPERACAO POST PARA LOGIN
-@user.post("/login", response_model=TokenData)
-def login_user(form_data: OAuth2PasswordRequestForm = Depends()):
+@user.post("/login")
+def login_user(request: LoginRequest):
     try:
         # Verificar se o usuário existe no banco de dados
         query = text("SELECT * FROM UserBd WHERE Email = :email")
-        user = conn.execute(query, {"email": form_data.username}).fetchone()
+        user = conn.execute(query, {"email": request.email}).fetchone()
 
         if not user:
             raise HTTPException(status_code=400, detail="Email ou senha incorretos.")
 
         # Descriptografar e verificar a senha
         user_dict = dict(user._mapping)
-
-        
         decrypted_pwd = Fernet(key).decrypt(user_dict["Pwd"].encode()).decode()  # Descriptografando
 
         # Verificar se a senha fornecida corresponde à senha descriptografada
-        if form_data.password != decrypted_pwd:
+        if request.password != decrypted_pwd:
             raise HTTPException(status_code=400, detail="Email ou senha incorretos.")
 
-        # Criar o token JWT
-        #access_token = create_access_token(data={
-       #     "sub": user_dict["Email"],
-        #    "username": user_dict["UserName"],  # Nome correto da chave
-         #   "role": user_dict["UserRoleID"]
-        #})
-
-        # Retornar os dados do token
+        # Retornar os dados do usuário
         return {
-            #"access_token": access_token,
-            #"token_type": "bearer",
-            #"email": user_dict["Email"],
+            "email": user_dict["Email"],
             "role": user_dict["UserRoleID"],
             "id": user_dict["UserBdID"]
         }
